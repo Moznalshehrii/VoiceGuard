@@ -31,15 +31,18 @@ see the task assignment table shared with the team for who owns what.
 
 ## Results
 
-_Filled in as each task completes. Report EER, not accuracy._
+_Filled in as each task completes. Report EER and min-DCF, not accuracy._
 
-| Eval set | EER | Notes |
-|---|---|---|
-| ASVspoof19 LA (held-out split of train, seen attack systems) | 0.41% | After 2/3 planned epochs — near-zero expected here since it's the *same* known attack systems as training, not a generalization test |
-| ASVspoof 2021 DF | — | pending (Person 2) |
-| In-the-Wild | — | pending (Person 3) — **this is the project's key result** |
-| ASVspoof19 LA, held-out attack systems | — | pending (Person 4) |
-| With vs. without augmentation | — | pending (Person 5) |
+min-DCF uses p_target=0.05, c_miss=1, c_fa=1 (see `src/utils/metrics.py`) --
+normalized so a trivial always-accept/always-reject system scores 1.0.
+
+| Eval set | EER | min-DCF | Notes |
+|---|---|---|---|
+| ASVspoof19 LA (held-out split of train, seen attack systems) | 0.41% | 0.0305 | After 2/3 planned epochs — near-zero expected here since it's the *same* known attack systems as training, not a generalization test |
+| ASVspoof 2021 DF | — | — | pending (Person 2) |
+| In-the-Wild | — | — | pending (Person 3) — **this is the project's key result** |
+| ASVspoof19 LA, held-out attack systems | — | — | pending (Person 4) |
+| With vs. without augmentation | — | — | pending (Person 5) |
 
 ## Layout
 

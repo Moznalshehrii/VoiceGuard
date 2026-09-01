@@ -34,7 +34,7 @@ from tqdm import tqdm
 from src.data.dataset import RawWaveformSpoofDataset
 from src.data.protocol import parse_asvspoof_protocol, parse_in_the_wild_meta, summarize
 from src.models.wav2vec_classifier import Wav2VecSpoofClassifier
-from src.utils.metrics import compute_eer
+from src.utils.metrics import compute_eer, compute_min_dcf
 
 
 def get_device() -> torch.device:
@@ -45,11 +45,12 @@ def get_device() -> torch.device:
     return torch.device("cpu")
 
 
-def evaluate(model, loader, device) -> tuple[float, float]:
-    """Returns (accuracy, eer_percent). No training here -- eval only."""
+def evaluate(model, loader, device) -> tuple[float, float, float]:
+    """Returns (accuracy, eer_percent, min_dcf). No training here -- eval only."""
     # TODO (Person 2): mirror the eval half of run_epoch() in train_wav2vec.py
     # -- forward pass only (torch.no_grad()), collect (label, P(bonafide))
-    # per clip, then call compute_eer(all_labels, all_scores).
+    # per clip, then call compute_eer(all_labels, all_scores) AND
+    # compute_min_dcf(all_labels, all_scores) -- report both, not just EER.
     raise NotImplementedError
 
 
@@ -73,8 +74,8 @@ def main(args):
     model.load_state_dict(torch.load(args.checkpoint, map_location=device))
     model.eval()
 
-    acc, eer = evaluate(model, loader, device)
-    print(f"Accuracy: {acc:.3f} | EER: {eer:.2f}%")
+    acc, eer, min_dcf = evaluate(model, loader, device)
+    print(f"Accuracy: {acc:.3f} | EER: {eer:.2f}% | min-DCF: {min_dcf:.4f}")
 
 
 if __name__ == "__main__":
