@@ -95,18 +95,26 @@ class RawWaveformSpoofDataset(Dataset):
         sample_rate: int = 16000,
         duration_s: float = 4.0,
         train: bool = True,
+        skip_decode_errors: bool = False,
     ):
         self.df = df.reset_index(drop=True)
         self.sample_rate = sample_rate
         self.num_samples = int(sample_rate * duration_s)
         self.train = train
+        self.skip_decode_errors = skip_decode_errors
 
     def __len__(self) -> int:
         return len(self.df)
 
     def __getitem__(self, idx: int):
         row = self.df.iloc[idx]
-        waveform = load_and_fix_length(row["filepath"], self.sample_rate, self.num_samples, self.train)
+        try:
+            waveform = load_and_fix_length(row["filepath"], self.sample_rate, self.num_samples, self.train)
+        except (OSError, RuntimeError) as error:
+            if not self.skip_decode_errors:
+                raise
+            print(f"Skipping unreadable audio: {row['filepath']} ({error})")
+            return None
         waveform = waveform.squeeze(0)  # [num_samples] -- Wav2Vec2 expects 1D per-sample input
 
         # zero-mean, unit-variance -- matches what Wav2Vec2FeatureExtractor

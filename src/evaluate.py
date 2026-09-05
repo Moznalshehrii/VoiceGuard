@@ -26,9 +26,10 @@ Usage (once implemented):
 """
 
 import argparse
+from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, default_collate
 from tqdm import tqdm
 
 from src.data.dataset import RawWaveformSpoofDataset
@@ -45,37 +46,95 @@ def get_device() -> torch.device:
     return torch.device("cpu")
 
 
-def evaluate(model, loader, device) -> tuple[float, float, float]:
-    """Returns (accuracy, eer_percent, min_dcf). No training here -- eval only."""
-    # TODO (Person 2): mirror the eval half of run_epoch() in train_wav2vec.py
-    # -- forward pass only (torch.no_grad()), collect (label, P(bonafide))
-    # per clip, then call compute_eer(all_labels, all_scores) AND
-    # compute_min_dcf(all_labels, all_scores) -- report both, not just EER.
-    raise NotImplementedError
+def evaluate(model, loader, device) -> tuple[float, float]:
+    """Return (EER percent, normalized min-DCF) for bonafide probability."""
+    all_labels, all_scores = [], []
+    model.eval()
+
+    with torch.no_grad():
+        for batch in tqdm(loader, desc="Evaluating"):
+            if batch is None:
+                continue
+            waveforms, labels = batch
+            logits = model(waveforms.to(device))
+            # Training uses class 1 for bonafide, so its softmax probability
+            # is the score expected by both metric functions.
+            scores = torch.softmax(logits, dim=1)[:, 1]
+            all_labels.extend(labels.tolist())
+            all_scores.extend(scores.cpu().tolist())
+
+    if len(set(all_labels)) != 2:
+        raise ValueError("Evaluation requires both bonafide and spoof trials.")
+
+    print(f"Scored {len(all_labels):,} readable trials.")
+    eer, _ = compute_eer(all_labels, all_scores)
+    min_dcf, _ = compute_min_dcf(all_labels, all_scores)
+    return eer, min_dcf
+
+
+def keep_available_audio(df, audio_dir: str, audio_ext: str):
+    """Keep protocol rows with audio in a (possibly partial) flat audio set."""
+    audio_path = Path(audio_dir)
+    available = {path.stem for path in audio_path.glob(f"*{audio_ext}")}
+    if not available:
+        raise FileNotFoundError(f"No {audio_ext} files found in {audio_path}")
+
+    keep = df["filepath"].map(lambda path: Path(path).stem in available)
+    filtered = df.loc[keep].reset_index(drop=True)
+    if filtered.empty:
+        raise FileNotFoundError(
+            "None of the protocol trial IDs match the audio directory. "
+            "Check --protocol, --audio_dir, and --audio_ext."
+        )
+    if len(filtered) != len(df):
+        print(f"Using {len(filtered):,} of {len(df):,} protocol trials with available audio.")
+    return filtered
+
+
+def load_weights(model, checkpoint: str, device: torch.device) -> None:
+    """Load a plain state_dict or a checkpoint dict containing ``state_dict``."""
+    state = torch.load(checkpoint, map_location=device, weights_only=True)
+    if isinstance(state, dict) and "state_dict" in state:
+        state = state["state_dict"]
+    if not isinstance(state, dict):
+        raise TypeError("Checkpoint must be a model state_dict or contain a 'state_dict' key.")
+    # Accommodate checkpoints saved through DataParallel.
+    if state and all(key.startswith("module.") for key in state):
+        state = {key.removeprefix("module."): value for key, value in state.items()}
+    model.load_state_dict(state)
+
+
+def collate_skip_decode_errors(batch):
+    """Discard dataset items that could not be decoded during evaluation."""
+    batch = [item for item in batch if item is not None]
+    return default_collate(batch) if batch else None
 
 
 def main(args):
     device = get_device()
     print(f"Using device: {device}")
 
-    # TODO (Person 2): branch on args.is_itw to call the right parser
     if args.is_itw:
         df = parse_in_the_wild_meta(args.protocol, audio_dir=args.audio_dir)
     else:
         df = parse_asvspoof_protocol(args.protocol, audio_dir=args.audio_dir, audio_ext=args.audio_ext)
+    df = keep_available_audio(df, args.audio_dir, args.audio_ext)
     print(f"Loaded protocol: {summarize(df)}")
 
-    dataset = RawWaveformSpoofDataset(df, train=False)
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
+    dataset = RawWaveformSpoofDataset(df, train=False, skip_decode_errors=True)
+    loader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.num_workers,
+        collate_fn=collate_skip_decode_errors,
+    )
 
-    # TODO (Person 2): load the model architecture, then load the trained
-    # weights from args.checkpoint with model.load_state_dict(...)
-    model = Wav2VecSpoofClassifier().to(device)
-    model.load_state_dict(torch.load(args.checkpoint, map_location=device))
-    model.eval()
+    model = Wav2VecSpoofClassifier(checkpoint=args.backbone).to(device)
+    load_weights(model, args.checkpoint, device)
 
-    acc, eer, min_dcf = evaluate(model, loader, device)
-    print(f"Accuracy: {acc:.3f} | EER: {eer:.2f}% | min-DCF: {min_dcf:.4f}")
+    eer, min_dcf = evaluate(model, loader, device)
+    print(f"EER: {eer:.2f}% | min-DCF: {min_dcf:.4f}")
 
 
 if __name__ == "__main__":
@@ -86,4 +145,6 @@ if __name__ == "__main__":
     parser.add_argument("--audio_ext", default=".flac")
     parser.add_argument("--is_itw", action="store_true", help="set this flag when evaluating on In-the-Wild")
     parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--num_workers", type=int, default=0)
+    parser.add_argument("--backbone", default="facebook/wav2vec2-xls-r-300m")
     main(parser.parse_args())

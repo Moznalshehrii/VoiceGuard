@@ -30,6 +30,8 @@ def parse_asvspoof_protocol(protocol_path: str, audio_dir: str, audio_ext: str =
             if not parts:
                 continue
             speaker_id, filename = parts[0], parts[1]
+            # 2019 LA rows have five fields and include a system id.  The
+            # labelled 2021 DF key file has only ``speaker filename label``.
             system_id = parts[-2] if len(parts) >= 5 else "-"
             label_str = parts[-1].lower()
             if label_str not in LABEL_TO_INT:
