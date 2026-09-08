@@ -24,7 +24,7 @@ see the task assignment table shared with the team for who owns what.
 
 | File | Owner | Status |
 |---|---|---|
-| `src/evaluate.py` | Person 2 | skeleton, not implemented |
+| `src/evaluate.py` | Person 2 | skeleton, implemented |
 | `src/train_holdout.py` | Person 4 | skeleton, not implemented |
 | `src/data/augmented_dataset.py` | Person 5 | skeleton, not implemented |
 | `app.py` | Person 6 | skeleton, not implemented |
