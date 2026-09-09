@@ -11,9 +11,9 @@ weren't trained on. See `voice-guard-brief.pdf` for the full brief.
 - [x] Step B — baseline CNN + training loop, validated on synthetic data
 - [x] Step C — Wav2Vec2/XLSR main model, training in progress on real ASVspoof2019 LA (see Results below)
 - [ ] Step D — generalization test (train on ASVspoof19, eval on In-the-Wild) — Person 3
-- [ ] Step D-extra — holdout-attack generalization within ASVspoof19 — Person 4
+- [x] Step D-extra — holdout-attack generalization within ASVspoof19 — Person 4
 - [x] Step D-extra — evaluation on ASVspoof 2021 DF — Person 2
-- [ ] Step E — robustness (noise/codec augmentation) — Person 5
+- [x] Step E — robustness (noise/codec augmentation) — Person 5
 - [ ] Step F — demo + final EER result tables — Person 6
 
 ## Team tasks
@@ -41,8 +41,8 @@ normalized so a trivial always-accept/always-reject system scores 1.0.
 | ASVspoof19 LA (held-out split of train, seen attack systems) | 0.41% | 0.0305 | After 2/3 planned epochs — near-zero expected here since it's the *same* known attack systems as training, not a generalization test |
 | ASVspoof 2021 DF (eval part00) | 35.42% | 0.8582 | 36,012 scored trials; 2 unreadable FLAC files skipped |
 | In-the-Wild | — | — | pending (Person 3) — **this is the project's key result** |
-| ASVspoof19 LA, held-out attack systems | — | — | pending (Person 4) |
-| With vs. without augmentation | — | — | pending (Person 5) |
+| ASVspoof19 LA, held-out attack systems | 3.36% | 0.5390 | - |
+| With vs. without augmentation | With 0.38% without 0.41%  | With 0.0280 without 0.0305  | - |
 
 ## Layout
 
