@@ -386,7 +386,7 @@ if __name__ == "__main__":
     parser.add_argument("--train_protocol", required=True)
     parser.add_argument("--train_audio_dir", required=True)
 
-    parser.add_argument("--eval_pr        jjjjhjhyytyyytyyyotocol", required=True)
+    parser.add_argument("--eval_protocol", required=True)
     parser.add_argument("--eval_audio_dir", required=True)
 
     parser.add_argument("--audio_ext", default=".flac")
