@@ -40,10 +40,25 @@ normalized so a trivial always-accept/always-reject system scores 1.0.
 |---|---|---|---|
 | ASVspoof19 LA (held-out split of train, seen attack systems) | 0.41% | 0.0305 | After 2/3 planned epochs — near-zero expected here since it's the *same* known attack systems as training, not a generalization test |
 | ASVspoof 2021 DF (eval part00) | 35.42% | 0.8582 | 36,012 scored trials; 2 unreadable FLAC files skipped |
-| In-the-Wild | — | — | pending (Person 3) — **this is the project's key result** |
+| In-the-Wild | 62.01%* | 0.9694* | 31,779 trials — **this is the project's key result, see caveat below** |
 | ASVspoof19 LA dev set (seen: A01-A06, same systems as training) | 0.84% | 0.0463 | corrected seen/unseen split -- see note below |
 | ASVspoof19 LA eval set (unseen: A07-A19, never in training) | 6.38% | 0.6629 | 71,237 trials; genuinely unseen attack systems |
 | With vs. without augmentation | With 0.38% without 0.41%  | With 0.0280 without 0.0305  | needs re-verification -- see note below |
+
+**Note on the In-the-Wild numbers (*):** EER/min-DCF are reported for
+completeness, but they understate what's actually happening. Direct
+inspection of individual predictions (23 samples checked by hand, varied
+lengths and both labels, including several clips ≥4s so padding isn't a
+factor) shows the model outputs an almost-constant `P(bonafide) ≈ 0.0009`
+regardless of the true label -- it isn't discriminating between real and
+fake on this data at all, just defaulting to "spoof" with high confidence
+every time. An EER above 50% is the tell: it means the score carries no
+real signal (not an inverted one). This is a stronger version of the
+project's core finding than the number alone suggests -- the model doesn't
+just get *less accurate* on real-world audio, it fails to generalize
+entirely, likely because the classifier head saturates when fed acoustic
+conditions (different recording devices, compression, noise) far outside
+the clean lab-recorded ASVspoof distribution it was fine-tuned on.
 
 **Note on the holdout-attack numbers above:** `train_holdout.py`'s original
 `build_seen_and_heldout()` mislabeled its "seen" set -- ASVspoof2019 LA's
