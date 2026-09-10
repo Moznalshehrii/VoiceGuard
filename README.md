@@ -14,7 +14,7 @@ weren't trained on. See `voice-guard-brief.pdf` for the full brief.
 - [x] Step D-extra — holdout-attack generalization within ASVspoof19 — Person 4
 - [x] Step D-extra — evaluation on ASVspoof 2021 DF — Person 2
 - [x] Step E — robustness (noise/codec augmentation) — Person 5
-- [ ] Step F — demo + final EER result tables — Person 6
+- [x] Step F — demo (Gradio, branded "Sawt / صوت") — live and tested end-to-end
 
 ## Team tasks
 
@@ -24,10 +24,10 @@ see the task assignment table shared with the team for who owns what.
 
 | File | Owner | Status |
 |---|---|---|
-| `src/evaluate.py` | Person 2 | skeleton, implemented |
-| `src/train_holdout.py` | Person 4 | skeleton, implemented |
-| `src/data/augmented_dataset.py` | Person 5 | skeleton, not implemented |
-| `app.py` | Person 6 | skeleton, not implemented |
+| `src/evaluate.py` | Person 2 | implemented |
+| `src/train_holdout.py` | Person 4 | implemented (bug fixed -- see Results notes) |
+| `src/data/augmented_dataset.py` | Person 5 | implemented (moved from a stray duplicate path -- see Results notes) |
+| `app.py` | Person 6 | implemented, deployed locally with a temporary public link |
 
 ## Results
 

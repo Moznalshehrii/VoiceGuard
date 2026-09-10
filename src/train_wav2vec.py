@@ -21,6 +21,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from src.data.augmented_dataset import AugmentedRawWaveformSpoofDataset
 from src.data.dataset import RawWaveformSpoofDataset
 from src.data.protocol import parse_asvspoof_protocol, summarize
 from src.models.wav2vec_classifier import Wav2VecSpoofClassifier
@@ -81,7 +82,12 @@ def main(args):
     val_df, train_df = df.iloc[:n_val], df.iloc[n_val:]
     print(f"Train: {len(train_df)} clips | Val: {len(val_df)} clips")
 
-    train_ds = RawWaveformSpoofDataset(train_df, train=True)
+    # val split always stays clean (no augmentation) so with/without-augmentation
+    # runs are evaluated identically -- only the training data differs
+    if args.augment:
+        train_ds = AugmentedRawWaveformSpoofDataset(train_df, train=True)
+    else:
+        train_ds = RawWaveformSpoofDataset(train_df, train=True)
     val_ds = RawWaveformSpoofDataset(val_df, train=False)
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=0)
@@ -136,4 +142,5 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--unfreeze_at_epoch", type=int, default=3)
     parser.add_argument("--ckpt_path", default="checkpoints/wav2vec_spoof.pt")
+    parser.add_argument("--augment", action="store_true", help="use noise/codec augmentation on training data (Step E)")
     main(parser.parse_args())
