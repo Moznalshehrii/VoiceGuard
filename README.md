@@ -43,7 +43,8 @@ normalized so a trivial always-accept/always-reject system scores 1.0.
 | In-the-Wild | 62.01%* | 0.9694* | 31,779 trials — **this is the project's key result, see caveat below** |
 | ASVspoof19 LA dev set (seen: A01-A06, same systems as training) | 0.84% | 0.0463 | corrected seen/unseen split -- see note below |
 | ASVspoof19 LA eval set (unseen: A07-A19, never in training) | 6.38% | 0.6629 | 71,237 trials; genuinely unseen attack systems |
-| With vs. without augmentation | With 0.38% without 0.41%  | With 0.0280 without 0.0305  | needs re-verification -- see note below |
+| With vs. without augmentation, on unseen eval set (A07-A19) | With 1.84%, without 6.38% | With 0.1665, without 0.6629 | re-verified after Step E fix -- augmentation gives a real, substantial improvement on unseen-*attack* generalization |
+| With vs. without augmentation, on In-the-Wild | No change (both collapse) | No change | augmentation does NOT fix the real-world domain-shift collapse -- noise/codec augmentation ≠ the actual diversity of real-world recording conditions |
 
 **Note on the In-the-Wild numbers (*):** EER/min-DCF are reported for
 completeness, but they understate what's actually happening. Direct
