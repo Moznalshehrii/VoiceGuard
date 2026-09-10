@@ -10,7 +10,7 @@ weren't trained on. See `voice-guard-brief.pdf` for the full brief.
 - [x] Step A — data pipeline (protocol parsing, audio -> Mel-spectrogram, PyTorch Dataset)
 - [x] Step B — baseline CNN + training loop, validated on synthetic data
 - [x] Step C — Wav2Vec2/XLSR main model, training in progress on real ASVspoof2019 LA (see Results below)
-- [ ] Step D — generalization test (train on ASVspoof19, eval on In-the-Wild) — Person 3
+- [x] Step D — generalization test (train on ASVspoof19, eval on In-the-Wild) — model collapses on real-world audio, see Results
 - [x] Step D-extra — holdout-attack generalization within ASVspoof19 — Person 4
 - [x] Step D-extra — evaluation on ASVspoof 2021 DF — Person 2
 - [x] Step E — robustness (noise/codec augmentation) — Person 5
