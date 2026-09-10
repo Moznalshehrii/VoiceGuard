@@ -41,8 +41,26 @@ normalized so a trivial always-accept/always-reject system scores 1.0.
 | ASVspoof19 LA (held-out split of train, seen attack systems) | 0.41% | 0.0305 | After 2/3 planned epochs — near-zero expected here since it's the *same* known attack systems as training, not a generalization test |
 | ASVspoof 2021 DF (eval part00) | 35.42% | 0.8582 | 36,012 scored trials; 2 unreadable FLAC files skipped |
 | In-the-Wild | — | — | pending (Person 3) — **this is the project's key result** |
-| ASVspoof19 LA, held-out attack systems | 3.36% | 0.5390 | - |
-| With vs. without augmentation | With 0.38% without 0.41%  | With 0.0280 without 0.0305  | - |
+| ASVspoof19 LA dev set (seen: A01-A06, same systems as training) | 0.84% | 0.0463 | corrected seen/unseen split -- see note below |
+| ASVspoof19 LA eval set (unseen: A07-A19, never in training) | 6.38% | 0.6629 | 71,237 trials; genuinely unseen attack systems |
+| With vs. without augmentation | With 0.38% without 0.41%  | With 0.0280 without 0.0305  | needs re-verification -- see note below |
+
+**Note on the holdout-attack numbers above:** `train_holdout.py`'s original
+`build_seen_and_heldout()` mislabeled its "seen" set -- ASVspoof2019 LA's
+train/dev protocols only use attack systems A01-A06, while the eval
+protocol uses A07-A19 exclusively (zero overlap, confirmed directly from
+the protocol files). So excluding 4 systems (A16-A19) from "the rest of
+eval" doesn't produce a seen set -- none of eval's systems were ever
+trained on. That's why the original run showed held-out (3.36%) EER
+*lower* than "seen" (which was never reported) -- both were actually
+unseen data. The two rows above replace it with the dataset's real
+seen/unseen split (dev vs. eval), which shows the expected direction:
+0.84% (seen) -> 6.38% (unseen).
+
+The augmentation row hasn't been re-verified yet -- it was computed before
+`src/data/augmented_dataset.py`'s real implementation was moved to the
+correct path (it had been sitting unused in a stray duplicate folder), so
+it's unclear which code actually produced those numbers.
 
 ## Layout
 

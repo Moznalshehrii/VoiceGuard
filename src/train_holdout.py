@@ -1,13 +1,15 @@
-"""Person 4 -- extra generalization study: hold out some ASVspoof2019 LA
-attack systems entirely from training, then test on them.
+"""Person 4 -- extra generalization study: seen vs. unseen attack systems
+within ASVspoof2019 LA.
 
-The training protocol file has a system_id per spoof clip (A01-A19 -- which
-TTS/voice-conversion system produced it). Train on a subset (e.g. A01-A15),
-then evaluate on the clips whose system_id was held out (A16-A19). The EER
-on held-out systems vs. seen systems is the interesting number here -- it's
-a within-dataset version of the ASVspoof-vs-In-the-Wild question Person 3
-is answering, and isolates "new synthesis method" from "totally different
-recording conditions".
+CORRECTED premise (an earlier version of this file assumed train contains
+A01-A19 and you could hold some out of it -- that's wrong): train/dev only
+ever use attack systems A01-A06; eval uses A07-A19 exclusively, with ZERO
+overlap. So "seen" here means all of train (A01-A06, genuinely trained on),
+and "held-out" means eval clips whose system_id is in --holdout_systems
+(default A16-A19, genuinely never seen). The EER on held-out vs. seen is
+the interesting number -- it's a within-dataset version of the
+ASVspoof-vs-In-the-Wild question Person 3 is answering, and isolates "new
+synthesis method" from "totally different recording conditions".
 
 Usage (once implemented):
     python3 -m src.train_holdout \
@@ -71,20 +73,31 @@ def safe_load_and_fix_length(filepath, sample_rate, num_samples, train):
 
 dataset_module.load_and_fix_length = safe_load_and_fix_length
 def build_seen_and_heldout(train_df, eval_df, holdout_systems):
+    """Split into a genuinely-seen set and a genuinely-unseen (held-out) set.
+
+    IMPORTANT: ASVspoof2019 LA's train/dev protocols only ever use attack
+    systems A01-A06; the eval protocol uses A07-A19 exclusively. There is
+    ZERO overlap between train and eval attack systems (verified directly
+    against the protocol files). An earlier version of this function
+    treated "eval systems not in holdout_systems" as "seen", which is
+    wrong -- none of eval's systems were ever trained on, so that produced
+    two differently-flavored unseen splits being compared to each other
+    (and, confusingly, a negative generalization gap).
+
+    seen_df:    ALL of train_df (the only data actually seen during
+                training) -- holdout_systems is not applied here since
+                train never contains A16-A19 (or any eval-only system) at all.
+    heldout_df: eval bonafide (for a fair EER pairing) + eval spoof clips
+                whose system_id is in holdout_systems (default A16-A19),
+                which were never seen during training.
+    """
     holdout_systems = set(holdout_systems)
 
-    train_bonafide = train_df[train_df["system_id"] == "-"]
+    seen_df = train_df.reset_index(drop=True)
+
     eval_bonafide = eval_df[eval_df["system_id"] == "-"]
-
-    train_spoof = train_df[train_df["system_id"] != "-"]
     eval_spoof = eval_df[eval_df["system_id"] != "-"]
-
-    seen_eval_spoof = eval_spoof[~eval_spoof["system_id"].isin(holdout_systems)]
     heldout_spoof = eval_spoof[eval_spoof["system_id"].isin(holdout_systems)]
-
-    seen_df = pd.concat(
-        [train_bonafide, train_spoof, eval_bonafide, seen_eval_spoof]
-    ).reset_index(drop=True)
 
     heldout_df = pd.concat(
         [eval_bonafide, heldout_spoof]
